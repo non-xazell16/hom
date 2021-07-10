@@ -39,7 +39,7 @@ from grovepi import *
 # Device Shadow
 
 BASE_TOPIC = "data/"
-DEFAULT_WAIT_TIME =5
+DEFAULT_WAIT_TIME =1800
 DEFAULT_STATE_TIME =''
 DEFAULT_MOISTER =0
 
@@ -177,7 +177,7 @@ def on_shadow_delta_updated(delta):
         if delta.state and (SHADOW_SUTATE_TIME_KEY in delta.state):
             state_val = DEFAULT_STATE_TIME if delta.state[SHADOW_SUTATE_TIME_KEY] is None else delta.state[SHADOW_SUTATE_TIME_KEY]
             temp = analogRead(SENSER)
-            moistuer = temp-100
+            moistuer = temp
             state_time = state_val
 
         change_shadow_value(wait_time,state_time,moistuer)
