@@ -339,7 +339,7 @@ def device_main():
     """
     main loop for dummy device
     """
-    global device_name, mqtt_connection, shadow_client,wait_time,state_time,moistuer
+    global device_name, mqtt_connection, shadow_client,moistuer
 
     init_info = arg_check()
     device_name = init_info['device_name']
