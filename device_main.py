@@ -168,13 +168,12 @@ def on_shadow_delta_updated(delta):
     global state_time
     global moistuer
     try:
-        logger.info("Received shadow delta event.")
-        print("####################################")
-        print("on_shadow_delta_updated")
-        print("####################################")
 
         if delta.state and (SHADOW_WAIT_TIME_KEY in delta.state):
-            
+            logger.info("Received shadow delta event.")
+            print("####################################")
+            print("on_shadow_delta_updated")
+            print("####################################")            
             wait_val = DEFAULT_WAIT_TIME if delta.state[SHADOW_WAIT_TIME_KEY] is None else delta.state[SHADOW_WAIT_TIME_KEY]
             wait_time = wait_val
         if delta.state and (SHADOW_SUTATE_TIME_KEY in delta.state):
@@ -396,9 +395,6 @@ def device_main():
     # 受信が成功するのを待つ
     get_accepted_subscribed_future.result()
     get_rejected_subscribed_future.result()
-    print("##############################################")
-    print(get_accepted_subscribed_future)
-    print("##############################################")
 
     # 送信
     publish_get_future = shadow_client.publish_get_shadow(
@@ -453,7 +449,7 @@ def device_main():
             payload=json.dumps(payload),
             qos=mqtt.QoS.AT_LEAST_ONCE)
 
-        time.sleep(SHADOW_WAIT_TIME_KEY)
+        time.sleep(wait_time)
 
 
 def exit_sample(msg_or_exception):
