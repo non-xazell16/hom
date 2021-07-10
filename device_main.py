@@ -431,9 +431,9 @@ def device_main():
     topic = BASE_TOPIC + device_name
     logging.info("topic: %s", topic)
    
+    print(wait_time)
     while True:
         now = datetime.now().strftime('%Y-%m-%dT%H:%M:%S')
-#        humi, temp = dht(ondo, 0)
         temp = analogRead(SENSER)
         moistuer = temp
         payload = {"DEVICE_NAME": device_name, "TIMESTAMP": now, "MOISTUER": int(temp)}
@@ -443,8 +443,8 @@ def device_main():
             topic=topic,
             payload=json.dumps(payload),
             qos=mqtt.QoS.AT_LEAST_ONCE)
-
         time.sleep(wait_time)
+
 
 
 def exit_sample(msg_or_exception):
