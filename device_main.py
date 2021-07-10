@@ -431,7 +431,7 @@ def device_main():
     # Start sending dummy data
     topic = BASE_TOPIC + device_name
     logging.info("topic: %s", topic)
-    global moistuer
+   
     while True:
         now = datetime.now().strftime('%Y-%m-%dT%H:%M:%S')
 #        humi, temp = dht(ondo, 0)
