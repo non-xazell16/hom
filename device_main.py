@@ -339,7 +339,7 @@ def device_main():
     """
     main loop for dummy device
     """
-    global device_name, mqtt_connection, shadow_client,moistuer
+    global device_name, mqtt_connection, shadow_client,moistuer,wait_time
 
     init_info = arg_check()
     device_name = init_info['device_name']
@@ -431,7 +431,8 @@ def device_main():
     topic = BASE_TOPIC + device_name
     logging.info("topic: %s", topic)
    
-    print(wait_time)
+    change_shadow_value(DEFAULT_WAIT_TIME,state_time,moistuer)
+    wait_time = DEFAULT_WAIT_TIME
     while True:
         now = datetime.now().strftime('%Y-%m-%dT%H:%M:%S')
         temp = analogRead(SENSER)
