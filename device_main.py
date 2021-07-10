@@ -170,10 +170,7 @@ def on_shadow_delta_updated(delta):
     try:
 
         if delta.state and (SHADOW_WAIT_TIME_KEY in delta.state):
-            logger.info("Received shadow delta event.")
-            print("####################################")
-            print("on_shadow_delta_updated")
-            print("####################################")            
+            logger.info("★Received shadow delta event.")          
             wait_val = DEFAULT_WAIT_TIME if delta.state[SHADOW_WAIT_TIME_KEY] is None else delta.state[SHADOW_WAIT_TIME_KEY]
             wait_time = wait_val
         if delta.state and (SHADOW_SUTATE_TIME_KEY in delta.state):
@@ -437,10 +434,12 @@ def device_main():
     # Start sending dummy data
     topic = BASE_TOPIC + device_name
     logging.info("topic: %s", topic)
+    global moistuer
     while True:
         now = datetime.now().strftime('%Y-%m-%dT%H:%M:%S')
 #        humi, temp = dht(ondo, 0)
         temp = analogRead(sensor)
+        moistuer = temp
         payload = {"DEVICE_NAME": device_name, "TIMESTAMP": now, "MOISTUER": int(temp)}
         logger.debug("  payload: %s", payload)
 
