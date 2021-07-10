@@ -366,9 +366,9 @@ def device_main():
     # 受信が成功するのを待つ
     get_accepted_subscribed_future.result()
     get_rejected_subscribed_future.result()
-    print(##############################################)
+    print("##############################################")
     print(get_accepted_subscribed_future)
-    print(##############################################)
+    print("##############################################")
 
     # 送信
     publish_get_future = shadow_client.publish_get_shadow(
