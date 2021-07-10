@@ -431,8 +431,6 @@ def device_main():
     topic = BASE_TOPIC + device_name
     logging.info("topic: %s", topic)
    
-    change_shadow_value(DEFAULT_WAIT_TIME,state_time,moistuer)
-    wait_time = DEFAULT_WAIT_TIME
     while True:
         now = datetime.now().strftime('%Y-%m-%dT%H:%M:%S')
         temp = analogRead(SENSER)
