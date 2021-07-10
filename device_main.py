@@ -177,7 +177,7 @@ def on_shadow_delta_updated(delta):
         if delta.state and (SHADOW_SUTATE_TIME_KEY in delta.state):
             state_val = DEFAULT_STATE_TIME if delta.state[SHADOW_SUTATE_TIME_KEY] is None else delta.state[SHADOW_SUTATE_TIME_KEY]
             temp = analogRead(SENSER)
-            moistuer = temp
+            moistuer = temp-100
             state_time = state_val
 
         change_shadow_value(wait_time,state_time,moistuer)
@@ -339,7 +339,9 @@ def device_main():
     """
     main loop for dummy device
     """
-    global device_name, mqtt_connection, shadow_client
+    global device_name, mqtt_connection, shadow_client,wait_time,state_time,moistuer
+    change_shadow_value(wait_time,state_time,moistuer)
+
     init_info = arg_check()
     device_name = init_info['device_name']
     iot_endpoint = init_info['endpoint']
