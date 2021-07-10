@@ -1,0 +1,1 @@
+print("a" if 10>11 else "b")

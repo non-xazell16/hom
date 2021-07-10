@@ -39,14 +39,22 @@ from grovepi import *
 # Device Shadow
 
 BASE_TOPIC = "data/"
-DEFAULT_WAIT_TIME =600
+DEFAULT_WAIT_TIME =5
+DEFAULT_STATE_TIME =''
+DEFAULT_MOISTER =0
+
 SHADOW_MOISTUER_KEY="moistuer"
+SHADOW_SUTATE_TIME_KEY="state_time"
 SHADOW_WAIT_TIME_KEY = "wait_time"
 KEEP_ALIVE = 300
 
 mqtt_connection = None
 shadow_client = None
+
 wait_time = DEFAULT_WAIT_TIME
+state_time = DEFAULT_STATE_TIME
+moistuer = DEFAULT_MOISTER
+
 device_name = None
 
 logger = logging.getLogger()
@@ -157,19 +165,34 @@ def on_shadow_delta_updated(delta):
     delta: iotshadow.ShadowDeltaUpdatedEvent
     """
     global wait_time
+    global state_time
+    global moistuer
     try:
         logger.info("Received shadow delta event.")
+        print("####################################")
+        print("on_shadow_delta_updated")
+        print("####################################")
+
         if delta.state and (SHADOW_WAIT_TIME_KEY in delta.state):
-            value = delta.state[SHADOW_WAIT_TIME_KEY]
-            if value is None:
-                logger.info("  Delta reports that '%s' was deleted. Resetting defaults...", SHADOW_WAIT_TIME_KEY)
-                change_shadow_value(DEFAULT_WAIT_TIME)
-                return
-            else:
-                logger.info("  Delta reports that desired value is '%s'. Changing local value from '%s' to '%s'", value,
-                            wait_time, value)
-                wait_time = value
-                change_shadow_value(wait_time)
+            
+            wait_val = DEFAULT_WAIT_TIME if delta.state[SHADOW_WAIT_TIME_KEY] is None else delta.state[SHADOW_WAIT_TIME_KEY]
+            wait_time = wait_val
+        if delta.state and (SHADOW_SUTATE_TIME_KEY in delta.state):
+            state_val = DEFAULT_STATE_TIME if delta.state[SHADOW_SUTATE_TIME_KEY] is None else delta.state[SHADOW_SUTATE_TIME_KEY]
+            state_time = state_val
+
+        change_shadow_value(wait_time,state_time,moistuer)
+
+            
+        # if delta.state and (SHADOW_SUTATE_TIME_KEY in delta.state):
+        #     value = delta.state[SHADOW_SUTATE_TIME_KEY]
+        #     if value is None:
+        #         change_shadow_value(DEFAULT_WAIT_TIME,DEFAULT_STATE_TIME,DEFAULT_MOISTER)
+        #         return
+        #     else:
+        #         state_time = value
+        #         change_shadow_value(DEFAULT_WAIT_TIME,DEFAULT_STATE_TIME,DEFAULT_MOISTER)
+
 
     except Exception as e:
         exit_sample(e)
@@ -212,30 +235,37 @@ def on_get_shadow_accepted(response):
     response: iotshadow.GetShadowResponse
     """
     global wait_time
+    global state_time
+    global moistuer
     try:
         logger.info("Finished getting initial shadow state.")
 
         if response.state:
             if response.state.delta:
-                value = response.state.delta.get(SHADOW_WAIT_TIME_KEY)
-                if value:
-                    logger.info("  Shadow contains delta wait_time: '%s'", value)
-                    logger.info("  Update local wait_time: '%s' to '%s'", wait_time, value)
-                    wait_time = value
-                    change_shadow_value(wait_time)
+                desired_value = response.state.desired.get(SHADOW_SUTATE_TIME_KEY)
+                desired_value_state = response.state.desired.get(SHADOW_SUTATE_TIME_KEY)
+                if desired_value or desired_value_state:
+                    wait_time = desired_value if desired_value else wait_time
+                    state_time = desired_value_state if desired_value_state else state_time
+                    change_shadow_value(wait_time,state_time,moistuer)
                     return
             elif response.state.desired:
-                desired_value = response.state.desired.get(SHADOW_WAIT_TIME_KEY)
-                if desired_value:
-                    wait_time = desired_value
-                    logger.info("  Shadow contains desired wait_time '%s'", wait_time)
+                desired_value = response.state.desired.get(SHADOW_SUTATE_TIME_KEY)
+                desired_value_state = response.state.desired.get(SHADOW_SUTATE_TIME_KEY)
+                if desired_value or desired_value_state:
+                    wait_time = desired_value if desired_value else wait_time
+                    state_time = desired_value_state if desired_value_state else state_time
                     if not response.state.reported:
-                        change_shadow_value(desired_value)
+                        change_shadow_value(wait_time,state_time,moistuer)
+
+
             elif response.state.reported:
+                desired_value_state = response.state.desired.get(SHADOW_SUTATE_TIME_KEY)
                 reported_value = response.state.reported.get(SHADOW_WAIT_TIME_KEY)
                 if reported_value:
                     wait_time = reported_value
-                    logger.info("  Shadow contains reported wait_time: '%s'", wait_time)
+                if reported_value:
+                    state_time = desired_value_state
 
         unsubscribe_get_shadow_events()
     except Exception as e:
@@ -254,7 +284,7 @@ def on_get_shadow_rejected(error):
     if error.code == 404:
         logger.info("Thing has no shadow document. Creating with defaults...")
         unsubscribe_get_shadow_events()
-        change_shadow_value(DEFAULT_WAIT_TIME)
+        change_shadow_value(DEFAULT_WAIT_TIME,DEFAULT_STATE_TIME,DEFAULT_MOISTER)
     else:
         exit_sample("Get request was rejected. code:{} message:'{}'".format(
             error.code, error.message))
@@ -277,7 +307,7 @@ def on_publish_update_shadow(future):
         exit_sample(e)
 
 
-def change_shadow_value(value):
+def change_shadow_value(wait,state,moistuer):
     """
     Update shadow reported state
 
@@ -287,7 +317,7 @@ def change_shadow_value(value):
     """
     logger.info("Updating reported shadow to...")
     new_state = iotshadow.ShadowState(
-        reported={SHADOW_WAIT_TIME_KEY: value}
+        reported={SHADOW_WAIT_TIME_KEY: wait,SHADOW_SUTATE_TIME_KEY: state,SHADOW_MOISTUER_KEY: moistuer}
     )
     request = iotshadow.UpdateShadowRequest(
         thing_name=device_name,
@@ -385,6 +415,10 @@ def device_main():
         qos=mqtt.QoS.AT_LEAST_ONCE,
         callback=on_shadow_delta_updated)
 
+    print("####################################")
+    print("★events on_shadow_delta_updated★")
+    print("####################################")
+
     # Wait for subscription to succeed
     delta_subscribed_future.result()
 
@@ -419,7 +453,7 @@ def device_main():
             payload=json.dumps(payload),
             qos=mqtt.QoS.AT_LEAST_ONCE)
 
-        time.sleep(600)
+        time.sleep(SHADOW_WAIT_TIME_KEY)
 
 
 def exit_sample(msg_or_exception):
