@@ -402,11 +402,7 @@ def device_main():
         request=iotshadow.ShadowDeltaUpdatedSubscriptionRequest(device_name),
         qos=mqtt.QoS.AT_LEAST_ONCE,
         callback=on_shadow_delta_updated)
-
-    print("####################################")
-    print("★events on_shadow_delta_updated★")
-    print("####################################")
-
+        
     # Wait for subscription to succeed
     delta_subscribed_future.result()
 
