@@ -1,27 +1,12 @@
-# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
-# SPDX-License-Identifier: MIT-0
+# 20210710
+# 水くれミント用RaspberryPiのクライアント
+# AWS IoT Core へ MQTT で接続し指定時間置きにメッセージ送信
 #
-# Permission is hereby granted, free of charge, to any person obtaining a copy of this
-# software and associated documentation files (the "Software"), to deal in the Software
-# without restriction, including without limitation the rights to use, copy, modify,
-# merge, publish, distribute, sublicense, and/or sell copies of the Software, and to
-# permit persons to whom the Software is furnished to do so.
-#
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
-# INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
-# PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
-# HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
-# SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-
-from __future__ import absolute_import
-from __future__ import print_function
 
 import argparse
 import json
 import logging
 import os
-import random
 import signal
 import sys
 import time
@@ -30,61 +15,72 @@ from datetime import datetime
 
 from awscrt import io, mqtt
 from awsiot import iotshadow, mqtt_connection_builder
+from grovepi import analogRead
 
-from grovepi import *
-#from get_data import DHT
 
-# - Overview -
-# This sample shows 1) how to connect AWS IoT Core. 2) How to use AWS IoT
-# Device Shadow
-
+# 定数定義 ############################################
 BASE_TOPIC = "data/"
+
+# Shadowプロパティ初期値
 DEFAULT_WAIT_TIME =1800
 DEFAULT_STATE_TIME =''
 DEFAULT_MOISTER =0
 
+# Shadow用キー名
 SHADOW_MOISTUER_KEY="moistuer"
 SHADOW_SUTATE_TIME_KEY="state_time"
 SHADOW_WAIT_TIME_KEY = "wait_time"
-KEEP_ALIVE = 300
-SENSER =0
 
+KEEP_ALIVE = 300    # タイムアウトまで
+SENSER =0           # GrobePiアナログセンサー接続位置
+
+
+# 変数 ############################################
+# 接続用object
 mqtt_connection = None
 shadow_client = None
+device_name = None
 
+# Shadowプロパティ情報保持用
 wait_time = DEFAULT_WAIT_TIME
 state_time = DEFAULT_STATE_TIME
 moistuer = DEFAULT_MOISTER
 
-device_name = None
-
+# ログ用
 logger = logging.getLogger()
 handler = logging.StreamHandler(sys.stdout)
 logger.addHandler(handler)
 logger.setLevel(logging.INFO)
 logging.basicConfig()
 
-
+# 引数のチェックと取得、設定
 def arg_check():
     """
-    argument check
+        起動時の引数とヘルプを定義
+        python3 device_main.py --device_name nonchan-20210704 --endpoint a6jwuuv50jxiy-ats.iot.ap-northeast-1.amazonaws.com
     """
-
     logging.debug("start: arg_check")
     parser = argparse.ArgumentParser()
+    # 必須　AWS IOTのモノの名前
     parser.add_argument("--device_name", required=True,
                         help="[Must], AWS IoT Core Thing Name")
+    # 必須　AWS IOTのエンドポイント
     parser.add_argument("--endpoint", required=True,
                         help="[Must], AWS IoT endpoint URI")
+    # 任意　ルート証明書（ルート認証局の公開鍵）
     parser.add_argument("--root_ca", required=False,
                         help="AWS IoT Core root ca file name with path")
+    # 任意　証明書
     parser.add_argument("--cert", required=False,
                         help="device cert file name with path")
+    # 任意　証明書
     parser.add_argument("--private", required=False,
                         help="private cert key file name with path")
+    # 任意　ログレベル
     parser.add_argument('--verbosity', choices=[x.name for x in io.LogLevel],
                         default=io.LogLevel.NoLogs.name, help='Logging level')
 
+    # パラメータ取得
     args = parser.parse_args()
 
     log_level = getattr(io.LogLevel, args.verbosity, "error")
@@ -96,7 +92,9 @@ def arg_check():
     logger.setLevel(loglevel_map[log_level])
     logging.basicConfig()
 
+    # デフォルト証明書探す
     cert_list = find_certs_file()
+    # 引数であればそっちの証明書優先
     if args.root_ca is not None:
         cert_list[0] = args.root_ca
     if args.private is not None:
@@ -105,8 +103,10 @@ def arg_check():
         cert_list[2] = args.cert
 
     logging.debug(cert_list)
+    # 証明書ファイルの存在チェック
     file_exist_check(cert_list)
 
+    # 接続情報返却
     init_dict = {
         "device_name": args.device_name,
         "endpoint": args.endpoint,
@@ -115,26 +115,18 @@ def arg_check():
     return init_dict
 
 
+# ファイルの存在チェック
 def file_exist_check(cert_list):
-    """
-    Check the files exists
-    all certs must placed in ./certs directory
-
-    Parameters
-    ----------
-    cert_list: Array
-    """
-
     for file in cert_list:
         if not os.path.exists(file):
             # if file not found, raise
             logger.error("cert file not found:%s", file)
             raise RuntimeError("file_not_exists")
 
-
+# このファイルと同じ階層のcertsディレクトリの証明書探す。
 def find_certs_file():
     """
-    Find the certificates file from ./certs directory
+     ./certs 
 
     Returns
     ----------
@@ -334,31 +326,36 @@ def unsubscribe_get_shadow_events():
     shadow_client.unsubscribe("$aws/things/{}/shadow/get/accepted".format(device_name))
     shadow_client.unsubscribe("$aws/things/{}/shadow/get/rejected".format(device_name))
 
-
+# メイン処理
 def device_main():
     """
     main loop for dummy device
     """
     global device_name, mqtt_connection, shadow_client,moistuer,wait_time
 
+    # 引数整理、接続情報取得
     init_info = arg_check()
+    # 接続情報を設定
     device_name = init_info['device_name']
     iot_endpoint = init_info['endpoint']
     rootca_file = init_info['certs'][0]
     private_key_file = init_info['certs'][1]
     certificate_file = init_info['certs'][2]
 
+    # log出力
     logger.info("device_name: %s", device_name)
     logger.info("endpoint: %s", iot_endpoint)
     logger.info("rootca cert: %s", rootca_file)
     logger.info("private key: %s", private_key_file)
     logger.info("certificate: %s", certificate_file)
 
-    # Spin up resources
+    # ソケット通信の為のおまじない
     event_loop_group = io.EventLoopGroup(1)
     host_resolver = io.DefaultHostResolver(event_loop_group)
+    # ソケット通信アクティビティを処理する共通ランタイムオブジェクト
     client_bootstrap = io.ClientBootstrap(event_loop_group, host_resolver)
 
+    # MQTT プロトコルを使用して AWS IoT Core との接続を確立
     mqtt_connection = mqtt_connection_builder.mtls_from_path(
         endpoint=iot_endpoint,
         cert_filepath=certificate_file,
@@ -369,7 +366,9 @@ def device_main():
         clean_session=False,
         keep_alive_secs=KEEP_ALIVE)
 
+    # コネクション確率
     connected_future = mqtt_connection.connect()
+    # shadowクライアント作成
     shadow_client = iotshadow.IotShadowClient(mqtt_connection)
     connected_future.result()
 
@@ -433,15 +432,16 @@ def device_main():
    
     while True:
         now = datetime.now().strftime('%Y-%m-%dT%H:%M:%S')
-        temp = analogRead(SENSER)
-        moistuer = temp
-        payload = {"DEVICE_NAME": device_name, "TIMESTAMP": now, "MOISTUER": int(temp)}
+        # センサーで値取得
+        moistuer = analogRead(SENSER)
+        payload = {"DEVICE_NAME": device_name, "TIMESTAMP": now, "MOISTUER": int(moistuer)}
         logger.debug("  payload: %s", payload)
-
+        # MQTTでIotにパブリッシュ
         mqtt_connection.publish(
             topic=topic,
             payload=json.dumps(payload),
             qos=mqtt.QoS.AT_LEAST_ONCE)
+        # 指定時間毎に送信するため
         time.sleep(wait_time)
 
 
@@ -474,10 +474,7 @@ def exit_handler(_signal, frame):
 
 
 if __name__ == "__main__":
-
-    ondo = 8
-
-    #print(dht(ondo,0))
+    # Contlorl+Cで停止するための設定
     signal.signal(signal.SIGINT, exit_handler)
-
+    # メイン処理
     device_main()
