@@ -67,7 +67,6 @@ WIDTH = 128
 HEIGHT = 64
 BORDER = 2
 
-
 ########################################################################################
 
 
@@ -211,11 +210,11 @@ def moniter_view(text):
 
 # 顔文字判定
 def mint_check(moistuer):
-    logger.info(moistuer)
-    print("#################################")
-    print("#######################sssssss##########")
-    if moistuer > 500 :
-        moniter_view("www")
+    # logger.info(moistuer)
+    # print("#################################")
+    # print("#######################sssssss##########")
+    # if moistuer > 500 :
+    #     moniter_view("www")
         # moniter_view("٩(ˊᗜˋ*)و")
     # elif moistuer > 300 :
     #     moniter_view("(๑`·ᴗ·´๑)")
@@ -432,6 +431,9 @@ def device_main():
     topic = BASE_TOPIC + device_name
     logging.info("topic: %s", topic)
    
+    # モニタ
+    moniter_view("start3")
+
     while True:
         now = datetime.now().strftime('%Y-%m-%dT%H:%M:%S')
         # センサーで値取得
@@ -473,8 +475,7 @@ def exit_handler(_signal, frame):
 if __name__ == "__main__":
     # Contlorl+Cで停止するための設定
     signal.signal(signal.SIGINT, exit_handler)
-    # モニタ
-    moniter_view("start3")
+
     # メイン処理
     device_main()
 
