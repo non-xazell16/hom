@@ -190,6 +190,7 @@ def moniter_view(text):
 
     # Draw a smaller inner rectangle
     draw.rectangle(
+
         (BORDER, BORDER, oled.width - BORDER - 1, oled.height - BORDER - 1),
         outline=0,
         fill=0,
@@ -214,7 +215,8 @@ def moniter_view(text):
 def mint_check(moistuer):
     
     if moistuer > 500 :
-        moniter_view("٩(ˊᗜˋ*)و")
+        moniter_view("www")
+        # moniter_view("٩(ˊᗜˋ*)و")
     elif moistuer > 300 :
         moniter_view("(๑`·ᴗ·´๑)")
     elif moistuer < 280 :
@@ -471,7 +473,7 @@ if __name__ == "__main__":
     # Contlorl+Cで停止するための設定
     signal.signal(signal.SIGINT, exit_handler)
     # モニタ
-    moniter_view("Hello World!")
+    moniter_view("start1")
     # メイン処理
     device_main()
 
