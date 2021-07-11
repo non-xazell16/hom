@@ -246,7 +246,7 @@ def on_shadow_delta_updated(delta):
             state_val = DEFAULT_STATE_TIME if delta.state[SHADOW_SUTATE_TIME_KEY] is None else delta.state[SHADOW_SUTATE_TIME_KEY]
             moistuer = analogRead(SENSER)
             # mint_check(moistuer)
-            moniter_view("test")
+            # moniter_view("test")
             state_time = state_val
 
         change_shadow_value(wait_time,state_time,moistuer)
