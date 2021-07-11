@@ -197,11 +197,12 @@ def moniter_view(text):
     )
     # Load default font.
     font = ImageFont.load_default()
+    logger.info(text)
 
     # Draw Some Text
     (font_width, font_height) = font.getsize(text)
     draw.text(
-        (oled.width // 2 - font_width // 2, oled.height // 2 - font_height // 2),
+        (oled.width - font_width , oled.height  - font_height ),
         text,
         font=font,
         fill=255,
@@ -473,7 +474,7 @@ if __name__ == "__main__":
     # Contlorl+Cで停止するための設定
     signal.signal(signal.SIGINT, exit_handler)
     # モニタ
-    moniter_view("start1")
+    moniter_view("start2")
     # メイン処理
     device_main()
 
