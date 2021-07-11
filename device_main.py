@@ -232,31 +232,28 @@ def on_get_shadow_accepted(response):
         logger.info("Finished getting initial shadow state.")
 
         if response.state:
+            wait_val = response.state.desired.get(SHADOW_WAIT_TIME_KEY)
+            state_val = response.state.desired.get(SHADOW_SUTATE_TIME_KEY)
+
             if response.state.delta:
-                desired_value = response.state.desired.get(SHADOW_SUTATE_TIME_KEY)
-                desired_value_state = response.state.desired.get(SHADOW_SUTATE_TIME_KEY)
-                if desired_value or desired_value_state:
-                    wait_time = desired_value if desired_value else wait_time
-                    state_time = desired_value_state if desired_value_state else state_time
+                if wait_val or state_val:
+                    wait_time = wait_val if wait_val else wait_time
+                    state_time = state_val if state_val else state_time
                     change_shadow_value(wait_time,state_time,moistuer)
                     return
             elif response.state.desired:
-                desired_value = response.state.desired.get(SHADOW_SUTATE_TIME_KEY)
-                desired_value_state = response.state.desired.get(SHADOW_SUTATE_TIME_KEY)
-                if desired_value or desired_value_state:
-                    wait_time = desired_value if desired_value else wait_time
-                    state_time = desired_value_state if desired_value_state else state_time
+                if state_val or wait_val:
+                    wait_time = wait_val if wait_val else wait_time
+                    state_time = state_val if state_val else state_time
                     if not response.state.reported:
                         change_shadow_value(wait_time,state_time,moistuer)
 
 
             elif response.state.reported:
-                desired_value_state = response.state.desired.get(SHADOW_SUTATE_TIME_KEY)
-                reported_value = response.state.reported.get(SHADOW_WAIT_TIME_KEY)
-                if reported_value:
-                    wait_time = reported_value
-                if reported_value:
-                    state_time = desired_value_state
+                if wait_val:
+                    wait_time = wait_val
+                if state_val:
+                    state_time = state_val
 
         unsubscribe_get_shadow_events()
     except Exception as e:
@@ -402,7 +399,7 @@ def device_main():
         request=iotshadow.ShadowDeltaUpdatedSubscriptionRequest(device_name),
         qos=mqtt.QoS.AT_LEAST_ONCE,
         callback=on_shadow_delta_updated)
-        
+
     # Wait for subscription to succeed
     delta_subscribed_future.result()
 
