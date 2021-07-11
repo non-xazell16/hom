@@ -1,8 +1,7 @@
-# 20210710
+# 20210710################################################
 # 水くれミント用RaspberryPiのクライアント
 # AWS IoT Core へ MQTT で接続し指定時間置きにメッセージ送信
-#
-
+###########################################################
 import argparse
 import json
 import logging
@@ -147,7 +146,7 @@ def find_certs_file():
 
     return file_list
 
-
+# shadowの変更指示があった時
 def on_shadow_delta_updated(delta):
     """
     callback for shadow delta update
@@ -157,63 +156,22 @@ def on_shadow_delta_updated(delta):
     ----------
     delta: iotshadow.ShadowDeltaUpdatedEvent
     """
-    global wait_time
-    global state_time
-    global moistuer
+    global wait_time, state_time, moistuer
     try:
-
-        if delta.state and (SHADOW_WAIT_TIME_KEY in delta.state):
-            logger.info("★Received shadow delta event.")          
+        # 待ち時間の変更
+        if delta.state and (SHADOW_WAIT_TIME_KEY in delta.state):    
             wait_val = DEFAULT_WAIT_TIME if delta.state[SHADOW_WAIT_TIME_KEY] is None else delta.state[SHADOW_WAIT_TIME_KEY]
             wait_time = wait_val
+        # センサー取得指示
         if delta.state and (SHADOW_SUTATE_TIME_KEY in delta.state):
             state_val = DEFAULT_STATE_TIME if delta.state[SHADOW_SUTATE_TIME_KEY] is None else delta.state[SHADOW_SUTATE_TIME_KEY]
-            temp = analogRead(SENSER)
-            moistuer = temp
+            moistuer = analogRead(SENSER)
             state_time = state_val
 
         change_shadow_value(wait_time,state_time,moistuer)
 
-            
-        # if delta.state and (SHADOW_SUTATE_TIME_KEY in delta.state):
-        #     value = delta.state[SHADOW_SUTATE_TIME_KEY]
-        #     if value is None:
-        #         change_shadow_value(DEFAULT_WAIT_TIME,DEFAULT_STATE_TIME,DEFAULT_MOISTER)
-        #         return
-        #     else:
-        #         state_time = value
-        #         change_shadow_value(DEFAULT_WAIT_TIME,DEFAULT_STATE_TIME,DEFAULT_MOISTER)
-
-
     except Exception as e:
         exit_sample(e)
-
-
-def on_update_shadow_accepted(response):
-    """
-    callback for shadow update accepted
-    https://docs.aws.amazon.com/ja_jp/iot/latest/developerguide/device-shadow-mqtt.html#update-accepted-pub-sub-topic
-
-    Parameters
-    ----------
-    response: iotshadow.UpdateShadowResponse
-    """
-    logging.info("on_update_shadow_accepted")
-    logging.debug(response)
-
-
-def on_update_shadow_rejected(error):
-    """
-    callback for shadow update rejected
-    https://docs.aws.amazon.com/ja_jp/iot/latest/developerguide/device-shadow-mqtt.html#update-rejected-pub-sub-topic
-
-    Parameters
-    ----------
-    error: iotshadow.ErrorResponse
-    """
-    logging.error("on_update_shadow_rejected")
-    logging.error("  Update request was rejected. code:%s message:'%s'",
-                  error.code, error.message)
 
 
 def on_get_shadow_accepted(response):
@@ -294,15 +252,9 @@ def on_publish_update_shadow(future):
         logger.error("Failed to publish update request.")
         exit_sample(e)
 
-
+# Update shadow reported state
 def change_shadow_value(wait,state,moistuer):
-    """
-    Update shadow reported state
-
-    Parameters
-    ----------
-    value: int
-    """
+    
     logger.info("Updating reported shadow to...")
     new_state = iotshadow.ShadowState(
         reported={SHADOW_WAIT_TIME_KEY: wait,SHADOW_SUTATE_TIME_KEY: state,SHADOW_MOISTUER_KEY: moistuer}
@@ -314,11 +266,9 @@ def change_shadow_value(wait,state,moistuer):
     future = shadow_client.publish_update_shadow(request, mqtt.QoS.AT_LEAST_ONCE)
     future.add_done_callback(on_publish_update_shadow)
 
-
+# Un subscribe Shadow get events
 def unsubscribe_get_shadow_events():
-    """
-    Un subscribe Shadow get events
-    """
+
     logger.info("un subscribe from get shadow events")
     shadow_client.unsubscribe("$aws/things/{}/shadow/get/accepted".format(device_name))
     shadow_client.unsubscribe("$aws/things/{}/shadow/get/rejected".format(device_name))
@@ -376,14 +326,8 @@ def device_main():
         qos=mqtt.QoS.AT_LEAST_ONCE,
         callback=on_get_shadow_accepted)
 
-    # get_rejected_subscribed_future, _ = shadow_client.subscribe_to_get_shadow_rejected(
-    #     request=iotshadow.GetShadowSubscriptionRequest(device_name),
-    #     qos=mqtt.QoS.AT_LEAST_ONCE,
-    #     callback=on_get_shadow_rejected)
-
     # 受信が成功するのを待つ
     get_accepted_subscribed_future.result()
-    # get_rejected_subscribed_future.result()
 
     # 送信
     publish_get_future = shadow_client.publish_get_shadow(
@@ -400,24 +344,7 @@ def device_main():
         qos=mqtt.QoS.AT_LEAST_ONCE,
         callback=on_shadow_delta_updated)
 
-    # Wait for subscription to succeed
     delta_subscribed_future.result()
-
-    # shadow update 応答をサブスクライブする
-    # logger.info("Subscribing to Shadow Update responses...")
-    # update_accepted_subscribed_future, _ = shadow_client.subscribe_to_update_shadow_accepted(
-    #     request=iotshadow.UpdateShadowSubscriptionRequest(device_name),
-    #     qos=mqtt.QoS.AT_LEAST_ONCE,
-    #     callback=on_update_shadow_accepted)
-
-    # update_rejected_subscribed_future, _ = shadow_client.subscribe_to_update_shadow_rejected(
-    #     request=iotshadow.UpdateShadowSubscriptionRequest(device_name),
-    #     qos=mqtt.QoS.AT_LEAST_ONCE,
-    #     callback=on_update_shadow_rejected)
-
-    # Wait for subscriptions to succeed
-    # update_accepted_subscribed_future.result()
-    # update_rejected_subscribed_future.result()
 
     # Start sending dummy data
     topic = BASE_TOPIC + device_name
@@ -438,15 +365,8 @@ def device_main():
         time.sleep(int(wait_time))
 
 
-
+# Contlorl+Cで停止するための設定
 def exit_sample(msg_or_exception):
-    """
-    Exit sample with cleaning
-
-    Parameters
-    ----------
-    msg_or_exception: str or Exception
-    """
     if isinstance(msg_or_exception, Exception):
         logger.error("Exiting sample due to exception.")
         traceback.print_exception(msg_or_exception.__class__, msg_or_exception, sys.exc_info()[2])
@@ -458,11 +378,9 @@ def exit_sample(msg_or_exception):
         mqtt_connection.disconnect()
     sys.exit(0)
 
-
+# Contlorl+Cで停止するための設定
 def exit_handler(_signal, frame):
-    """
-    Exit sample
-    """
+
     exit_sample(" Key abort")
 
 
