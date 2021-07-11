@@ -199,10 +199,11 @@ def moniter_view(text):
     font = ImageFont.load_default()
     logger.info(text)
 
+
     # Draw Some Text
     (font_width, font_height) = font.getsize(text)
     draw.text(
-        (oled.width - font_width , oled.height  - font_height ),
+        (oled.width // 2 - font_width // 2, oled.height // 2 - font_height // 2),
         text,
         font=font,
         fill=255,
@@ -214,18 +215,20 @@ def moniter_view(text):
 
 # 顔文字判定
 def mint_check(moistuer):
-    
+    logger.info(moistuer)
+    print("#################################")
+    print("#######################sssssss##########")
     if moistuer > 500 :
         moniter_view("www")
         # moniter_view("٩(ˊᗜˋ*)و")
-    elif moistuer > 300 :
-        moniter_view("(๑`·ᴗ·´๑)")
-    elif moistuer < 280 :
-        moniter_view("(´·ω·`)")
-    elif moistuer < 250 :
-        moniter_view("(´._.`)")
-    else:
-        moniter_view("ヽ(`Д´)ﾉ")
+    # elif moistuer > 300 :
+    #     moniter_view("(๑`·ᴗ·´๑)")
+    # elif moistuer < 280 :
+    #     moniter_view("(´·ω·`)")
+    # elif moistuer < 250 :
+    #     moniter_view("(´._.`)")
+    # else:
+    #     moniter_view("ヽ(`Д´)ﾉ")
 
 # shadowの変更指示があった時
 def on_shadow_delta_updated(delta):
@@ -474,7 +477,7 @@ if __name__ == "__main__":
     # Contlorl+Cで停止するための設定
     signal.signal(signal.SIGINT, exit_handler)
     # モニタ
-    moniter_view("start2")
+    moniter_view("start3")
     # メイン処理
     device_main()
 
