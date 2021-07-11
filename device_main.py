@@ -177,7 +177,7 @@ def find_certs_file():
 # モニター表示用処理
 def moniter_view(text):
     global oled
-    
+
     # Create blank image for drawing.
     # Make sure to create image with mode '1' for 1-bit color.
     image = Image.new("1", (oled.width, oled.height))
@@ -198,7 +198,6 @@ def moniter_view(text):
     font = ImageFont.load_default()
 
     # Draw Some Text
-    text = "Hello World!"
     (font_width, font_height) = font.getsize(text)
     draw.text(
         (oled.width // 2 - font_width // 2, oled.height // 2 - font_height // 2),
