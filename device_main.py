@@ -376,14 +376,14 @@ def device_main():
         qos=mqtt.QoS.AT_LEAST_ONCE,
         callback=on_get_shadow_accepted)
 
-    get_rejected_subscribed_future, _ = shadow_client.subscribe_to_get_shadow_rejected(
-        request=iotshadow.GetShadowSubscriptionRequest(device_name),
-        qos=mqtt.QoS.AT_LEAST_ONCE,
-        callback=on_get_shadow_rejected)
+    # get_rejected_subscribed_future, _ = shadow_client.subscribe_to_get_shadow_rejected(
+    #     request=iotshadow.GetShadowSubscriptionRequest(device_name),
+    #     qos=mqtt.QoS.AT_LEAST_ONCE,
+    #     callback=on_get_shadow_rejected)
 
     # 受信が成功するのを待つ
     get_accepted_subscribed_future.result()
-    get_rejected_subscribed_future.result()
+    # get_rejected_subscribed_future.result()
 
     # 送信
     publish_get_future = shadow_client.publish_get_shadow(
@@ -404,28 +404,24 @@ def device_main():
     delta_subscribed_future.result()
 
     # shadow update 応答をサブスクライブする
-    logger.info("Subscribing to Shadow Update responses...")
-    update_accepted_subscribed_future, _ = shadow_client.subscribe_to_update_shadow_accepted(
-        request=iotshadow.UpdateShadowSubscriptionRequest(device_name),
-        qos=mqtt.QoS.AT_LEAST_ONCE,
-        callback=on_update_shadow_accepted)
+    # logger.info("Subscribing to Shadow Update responses...")
+    # update_accepted_subscribed_future, _ = shadow_client.subscribe_to_update_shadow_accepted(
+    #     request=iotshadow.UpdateShadowSubscriptionRequest(device_name),
+    #     qos=mqtt.QoS.AT_LEAST_ONCE,
+    #     callback=on_update_shadow_accepted)
 
-    update_rejected_subscribed_future, _ = shadow_client.subscribe_to_update_shadow_rejected(
-        request=iotshadow.UpdateShadowSubscriptionRequest(device_name),
-        qos=mqtt.QoS.AT_LEAST_ONCE,
-        callback=on_update_shadow_rejected)
+    # update_rejected_subscribed_future, _ = shadow_client.subscribe_to_update_shadow_rejected(
+    #     request=iotshadow.UpdateShadowSubscriptionRequest(device_name),
+    #     qos=mqtt.QoS.AT_LEAST_ONCE,
+    #     callback=on_update_shadow_rejected)
 
     # Wait for subscriptions to succeed
-    update_accepted_subscribed_future.result()
-    update_rejected_subscribed_future.result()
+    # update_accepted_subscribed_future.result()
+    # update_rejected_subscribed_future.result()
 
     # Start sending dummy data
     topic = BASE_TOPIC + device_name
     logging.info("topic: %s", topic)
-
-    print("########################################")
-    print(wait_time)
-    print("########################################")
    
     while True:
         now = datetime.now().strftime('%Y-%m-%dT%H:%M:%S')
