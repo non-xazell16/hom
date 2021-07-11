@@ -429,6 +429,10 @@ def device_main():
     # Start sending dummy data
     topic = BASE_TOPIC + device_name
     logging.info("topic: %s", topic)
+
+    print("########################################")
+    print(wait_time)
+    print("########################################")
    
     while True:
         now = datetime.now().strftime('%Y-%m-%dT%H:%M:%S')
@@ -442,7 +446,7 @@ def device_main():
             payload=json.dumps(payload),
             qos=mqtt.QoS.AT_LEAST_ONCE)
         # 指定時間毎に送信するため
-        time.sleep(wait_time)
+        time.sleep(int(wait_time))
 
 
 
