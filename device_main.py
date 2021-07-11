@@ -432,7 +432,7 @@ def device_main():
     logging.info("topic: %s", topic)
    
     # モニタ
-    moniter_view("start3")
+    # moniter_view("start3")
 
     while True:
         now = datetime.now().strftime('%Y-%m-%dT%H:%M:%S')
