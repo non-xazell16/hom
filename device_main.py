@@ -432,6 +432,7 @@ def device_main():
     logging.info("topic: %s", topic)
    
     # モニタ
+    # 
     # moniter_view("start3")
 
     while True:
@@ -439,7 +440,7 @@ def device_main():
         # センサーで値取得
         moistuer = analogRead(SENSER)
         # 画面表示
-        mint_check(moistuer)
+        # mint_check(moistuer)
 
         payload = {"DEVICE_NAME": device_name, "TIMESTAMP": now, "MOISTUER": int(moistuer)}
         logger.debug("  payload: %s", payload)
@@ -469,8 +470,6 @@ def exit_sample(msg_or_exception):
 def exit_handler(_signal, frame):
 
     exit_sample(" Key abort")
-
-
 
 if __name__ == "__main__":
     # Contlorl+Cで停止するための設定
