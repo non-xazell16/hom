@@ -210,12 +210,12 @@ def moniter_view(text):
 
 # 顔文字判定
 def mint_check(moistuer):
-    # logger.info(moistuer)
+    logger.info(moistuer)
     # print("#################################")
     # print("#######################sssssss##########")
     # if moistuer > 500 :
     #     moniter_view("www")
-        # moniter_view("٩(ˊᗜˋ*)و")
+    # moniter_view("٩(ˊᗜˋ*)و")
     # elif moistuer > 300 :
     #     moniter_view("(๑`·ᴗ·´๑)")
     # elif moistuer < 280 :
