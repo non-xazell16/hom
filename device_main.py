@@ -12,12 +12,6 @@ import time
 import traceback
 from datetime import datetime
 
-import board
-import digitalio
-from PIL import Image, ImageDraw, ImageFont
-import adafruit_ssd1306
-
-
 from awscrt import io, mqtt
 from awsiot import iotshadow, mqtt_connection_builder
 from grovepi import analogRead
@@ -57,18 +51,6 @@ handler = logging.StreamHandler(sys.stdout)
 logger.addHandler(handler)
 logger.setLevel(logging.INFO)
 logging.basicConfig()
-
-##モニター初期処理################################################################
-# Define the Reset Pin
-oled_reset = digitalio.DigitalInOut(board.D4)
-
-# モニターサイズ（128×64）
-WIDTH = 128
-HEIGHT = 64
-BORDER = 2
-
-########################################################################################
-
 
 # 引数のチェックと取得、設定
 def arg_check():
@@ -164,67 +146,6 @@ def find_certs_file():
 
     return file_list
 
-# モニター表示用処理
-def moniter_view(text):
-    # Use for I2C.
-    i2c = board.I2C()
-    oled = adafruit_ssd1306.SSD1306_I2C(WIDTH, HEIGHT, i2c, addr=0x3C, reset=oled_reset)
-
-    # Clear display.
-    oled.fill(0)
-    oled.show()
-    # Create blank image for drawing.
-    # Make sure to create image with mode '1' for 1-bit color.
-    image = Image.new("1", (oled.width, oled.height))
-
-    # Get drawing object to draw on image.
-    draw = ImageDraw.Draw(image)
-
-    # Draw a white background
-    draw.rectangle((0, 0, oled.width, oled.height), outline=255, fill=255)
-
-    # Draw a smaller inner rectangle
-    draw.rectangle(
-
-        (BORDER, BORDER, oled.width - BORDER - 1, oled.height - BORDER - 1),
-        outline=0,
-        fill=0,
-    )
-    # Load default font.
-    font = ImageFont.load_default()
-    logger.info(text)
-
-
-    # Draw Some Text
-    (font_width, font_height) = font.getsize(text)
-    draw.text(
-        (oled.width // 2 - font_width // 2, oled.height // 2 - font_height // 2),
-        text,
-        font=font,
-        fill=255,
-    )
-
-    # Display image
-    oled.image(image)
-    oled.show()
-
-# 顔文字判定
-def mint_check(moistuer):
-    logger.info(moistuer)
-    # print("#################################")
-    # print("#######################sssssss##########")
-    # if moistuer > 500 :
-    #     moniter_view("www")
-    # moniter_view("٩(ˊᗜˋ*)و")
-    # elif moistuer > 300 :
-    #     moniter_view("(๑`·ᴗ·´๑)")
-    # elif moistuer < 280 :
-    #     moniter_view("(´·ω·`)")
-    # elif moistuer < 250 :
-    #     moniter_view("(´._.`)")
-    # else:
-    #     moniter_view("ヽ(`Д´)ﾉ")
-
 # shadowの変更指示があった時
 def on_shadow_delta_updated(delta):
     """
@@ -245,8 +166,6 @@ def on_shadow_delta_updated(delta):
         if delta.state and (SHADOW_SUTATE_TIME_KEY in delta.state):
             state_val = DEFAULT_STATE_TIME if delta.state[SHADOW_SUTATE_TIME_KEY] is None else delta.state[SHADOW_SUTATE_TIME_KEY]
             moistuer = analogRead(SENSER)
-            # mint_check(moistuer)
-            # moniter_view("test")
             state_time = state_val
 
         change_shadow_value(wait_time,state_time,moistuer)
@@ -431,17 +350,10 @@ def device_main():
     topic = BASE_TOPIC + device_name
     logging.info("topic: %s", topic)
    
-    # モニタ
-    # 
-    # moniter_view("start3")
-
     while True:
         now = datetime.now().strftime('%Y-%m-%dT%H:%M:%S')
         # センサーで値取得
         moistuer = analogRead(SENSER)
-        # 画面表示
-        # mint_check(moistuer)
-
         payload = {"DEVICE_NAME": device_name, "TIMESTAMP": now, "MOISTUER": int(moistuer)}
         logger.debug("  payload: %s", payload)
         # MQTTでIotにパブリッシュ
@@ -471,11 +383,9 @@ def exit_handler(_signal, frame):
 
     exit_sample(" Key abort")
 
+
 if __name__ == "__main__":
     # Contlorl+Cで停止するための設定
     signal.signal(signal.SIGINT, exit_handler)
-
     # メイン処理
     device_main()
-
-
